@@ -54,7 +54,6 @@ public class AuthDataSeeder implements CommandLineRunner {
 		admin.setDepartment(bootstrapAdminProperties.department());
 		admin.setYear(bootstrapAdminProperties.year());
 		admin.setPhoneNumber(bootstrapAdminProperties.phoneNumber());
-		admin.setProfileImage(bootstrapAdminProperties.profileImage());
 		admin.setRoles(Set.of(ensureRole(RoleName.ROLE_APP_ADMIN)));
 		admin.setEnabled(true);
 		userRepository.save(admin);

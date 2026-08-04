@@ -7,7 +7,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.campusone.campusone.config.JwtProperties;
-import com.campusone.campusone.dto.request.AdminCreateRequest;
 import com.campusone.campusone.dto.request.LoginRequest;
 import com.campusone.campusone.dto.request.RefreshTokenRequest;
 import com.campusone.campusone.dto.request.SignupRequest;
@@ -58,18 +57,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public AuthResponse signup(SignupRequest request) {
 		return registerUser(request.registrationNumber(), request.fullName(), request.email(), request.password(),
-				request.department(), request.year(), request.phoneNumber(), request.profileImage(),
-				RoleName.ROLE_STUDENT);
-	}
-
-	@Override
-	public AuthResponse createAdminAccount(AdminCreateRequest request) {
-		if (request.roleName() == RoleName.ROLE_STUDENT) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Admin account must use an admin role");
-		}
-		return registerUser(request.registrationNumber(), request.fullName(), request.email(), request.password(),
-				request.department(), request.year(), request.phoneNumber(), request.profileImage(),
-				request.roleName());
+				request.department(), request.year(), request.phoneNumber(), RoleName.ROLE_STUDENT);
 	}
 
 	@Override
@@ -98,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	private AuthResponse registerUser(String registrationNumber, String fullName, String email, String password,
-			String department, Integer year, String phoneNumber, String profileImage, RoleName roleName) {
+			String department, Integer year, String phoneNumber, RoleName roleName) {
 		if (userRepository.existsByEmailIgnoreCaseOrRegistrationNumberIgnoreCase(email, registrationNumber)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
 		}
@@ -110,7 +98,6 @@ public class AuthServiceImpl implements AuthService {
 		user.setDepartment(department);
 		user.setYear(year);
 		user.setPhoneNumber(phoneNumber);
-		user.setProfileImage(profileImage);
 		user.setEnabled(true);
 		user.setRoles(Set.of(ensureRole(roleName)));
 		user = userRepository.save(user);
@@ -152,7 +139,6 @@ public class AuthServiceImpl implements AuthService {
 		Set<String> roles = new LinkedHashSet<>();
 		user.getRoles().forEach(role -> roles.add(role.getRoleName().name()));
 		return new UserResponse(user.getId(), user.getRegistrationNumber(), user.getFullName(), user.getEmail(),
-				user.getDepartment(), user.getYear(), user.getPhoneNumber(), user.getProfileImage(), user.isEnabled(),
-				roles);
+				user.getDepartment(), user.getYear(), user.getPhoneNumber(), user.isEnabled(), roles);
 	}
 }

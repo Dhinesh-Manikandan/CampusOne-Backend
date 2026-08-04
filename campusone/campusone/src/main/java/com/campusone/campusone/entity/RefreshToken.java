@@ -35,7 +35,7 @@ public class RefreshToken {
 	@EqualsAndHashCode.Include
 	private Long id;
 
-	@Column(name = "token", nullable = false, length = 255, unique = true)
+	@Column(name = "token", nullable = false, length = 2048, unique = true)
 	private String token;
 
 	@Column(name = "expires_at", nullable = false)

@@ -1,5 +1,9 @@
 package com.campusone.campusone.config;
 
+import java.io.IOException;
+import java.time.Instant;
+
+import com.campusone.campusone.dto.response.ApiErrorResponse;
 import com.campusone.campusone.security.JwtAuthenticationFilter;
 import com.campusone.campusone.security.CustomUserDetailsService;
 
@@ -41,18 +45,16 @@ public class SecurityConfig {
 				.formLogin(AbstractHttpConfigurer::disable)
 				.cors(Customizer.withDefaults())
 				.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, exception) -> {
-					response.setStatus(HttpStatus.UNAUTHORIZED.value());
-					response.setContentType("application/json");
-					response.getWriter().write("{\"message\":\"Unauthorized\"}");
-				}).accessDeniedHandler((request, response, exception) -> {
-					response.setStatus(HttpStatus.FORBIDDEN.value());
-					response.setContentType("application/json");
-					response.getWriter().write("{\"message\":\"Forbidden\"}");
-				}))
+					Object authError = request.getAttribute("auth_error_message");
+					String message = authError instanceof String ? (String) authError : "Unauthorized";
+					writeError(response, HttpStatus.UNAUTHORIZED, message, request.getRequestURI());
+				})
+						.accessDeniedHandler((request, response, exception) -> writeError(response, HttpStatus.FORBIDDEN,
+								"Forbidden", request.getRequestURI())))
 				.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
-						"/api/auth/refresh").permitAll().requestMatchers(HttpMethod.POST, "/api/auth/admin")
-						.hasRole("APP_ADMIN").requestMatchers("/error").permitAll().requestMatchers("/api/admin/**")
-						.hasRole("APP_ADMIN").requestMatchers("/api/event-admin/**")
+						"/api/auth/refresh").permitAll().requestMatchers(HttpMethod.POST, "/api/app-admin-requests")
+						.hasAnyRole("STUDENT", "EVENT_ADMIN").requestMatchers("/error").permitAll()
+						.requestMatchers("/api/admin/**").hasRole("APP_ADMIN").requestMatchers("/api/event-admin/**")
 						.hasAnyRole("EVENT_ADMIN", "APP_ADMIN").requestMatchers("/api/student/**")
 						.hasAnyRole("STUDENT", "EVENT_ADMIN", "APP_ADMIN")
 						.anyRequest().authenticated())
@@ -71,5 +73,20 @@ public class SecurityConfig {
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
+	}
+
+	private void writeError(jakarta.servlet.http.HttpServletResponse response, HttpStatus status, String message,
+			String path) throws IOException {
+		response.setStatus(status.value());
+		response.setContentType("application/json");
+		ApiErrorResponse error = new ApiErrorResponse(Instant.now(), status.value(), status.getReasonPhrase(),
+				message, path);
+		response.getWriter().write("{\"timestamp\":\"" + error.timestamp() + "\",\"status\":"
+				+ error.status() + ",\"error\":\"" + escapeJson(error.error()) + "\",\"message\":\""
+				+ escapeJson(error.message()) + "\",\"path\":\"" + escapeJson(error.path()) + "\"}");
+	}
+
+	private String escapeJson(String value) {
+		return value.replace("\\", "\\\\").replace("\"", "\\\"");
 	}
 }

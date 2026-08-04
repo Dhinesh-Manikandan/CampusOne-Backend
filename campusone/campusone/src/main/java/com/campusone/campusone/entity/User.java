@@ -90,10 +90,6 @@ public class User {
 	@Column(name = "phone_number", nullable = false, length = 15)
 	private String phoneNumber;
 
-	@Size(max = 512)
-	@Column(name = "profile_image", length = 512)
-	private String profileImage;
-
 	@Column(name = "enabled", nullable = false)
 	private boolean enabled = true;
 

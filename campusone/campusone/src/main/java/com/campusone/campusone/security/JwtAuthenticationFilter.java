@@ -45,14 +45,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				if (jwtService.isAccessToken(token)) {
 					String subject = jwtService.extractSubject(token);
 					UserDetails userDetails = userDetailsService.loadUserByUsername(subject);
-					if (jwtService.isTokenValid(token, userDetails)) {
+					if (userDetails.isEnabled() && jwtService.isTokenValid(token, userDetails)) {
 						UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
 								userDetails, null, userDetails.getAuthorities());
 						authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 						SecurityContextHolder.getContext().setAuthentication(authentication);
+					} else if (!userDetails.isEnabled()) {
+						request.setAttribute("auth_error_message", "User account is disabled");
 					}
+				} else {
+					request.setAttribute("auth_error_message", "Use an access token for this endpoint");
 				}
 			} catch (JwtException | IllegalArgumentException | UsernameNotFoundException exception) {
+				request.setAttribute("auth_error_message", "Invalid or expired access token");
 				SecurityContextHolder.clearContext();
 			}
 		}
@@ -61,8 +66,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private String resolveToken(HttpServletRequest request) {
 		String header = request.getHeader("Authorization");
-		if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
-			return header.substring(7);
+		if (!StringUtils.hasText(header)) {
+			return null;
+		}
+		String trimmedHeader = header.trim();
+		if (trimmedHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
+			String token = trimmedHeader.substring(7).trim();
+			if (token.startsWith("\"") && token.endsWith("\"") && token.length() > 1) {
+				token = token.substring(1, token.length() - 1).trim();
+			}
+			return token;
 		}
 		return null;
 	}
