@@ -1,0 +1,14 @@
+{
+    "title": "Advanced AI Workshop",
+    "description": "Updated workshop details",
+    "category": "TECHNICAL",
+    "venue": "Main Auditorium",
+    "eventDate": "2026-08-20",
+    "startTime": "11:00:00",
+    "endTime": "14:00:00",
+    "registrationDeadline": "2026-08-15",
+    "maxParticipants": 150,
+    "bannerImage": "updated.png",
+    "createdBy": 1,
+    "status": "UPCOMING"
+}

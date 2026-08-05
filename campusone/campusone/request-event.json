@@ -1,0 +1,14 @@
+{
+    "title": "AI Workshop",
+    "description": "Workshop on Artificial Intelligence and Machine Learning",
+    "category": "TECHNICAL",
+    "venue": "CSE Seminar Hall",
+    "eventDate": "2026-08-15",
+    "startTime": "10:00:00",
+    "endTime": "13:00:00",
+    "registrationDeadline": "2026-08-10",
+    "maxParticipants": 100,
+    "bannerImage": "ai-workshop.png",
+    "createdBy": 1,
+    "status": "UPCOMING"
+}
