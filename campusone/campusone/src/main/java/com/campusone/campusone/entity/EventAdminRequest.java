@@ -35,45 +35,51 @@ import org.hibernate.annotations.CreationTimestamp;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class EventAdminRequest {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id", nullable = false, updatable = false)
-	@Setter(AccessLevel.NONE)
-	@EqualsAndHashCode.Include
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false, updatable = false)
+    @Setter(AccessLevel.NONE)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-	@NotBlank
-	@Size(max = 2000)
-	@Column(name = "request_reason", nullable = false, length = 2000)
-	private String requestReason;
+    @NotBlank
+    @Size(max = 2000)
+    @Column(name = "request_reason", nullable = false, length = 2000)
+    private String requestReason;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
-	@NotNull
-	private EventAdminRequestStatus status = EventAdminRequestStatus.PENDING;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @NotNull
+    private EventAdminRequestStatus status = EventAdminRequestStatus.PENDING;
 
-	@CreationTimestamp
-	@Column(name = "requested_at", nullable = false, updatable = false)
-	@Setter(AccessLevel.NONE)
-	private LocalDateTime requestedAt;
+    @CreationTimestamp
+    @Column(name = "requested_at", nullable = false, updatable = false)
+    @Setter(AccessLevel.NONE)
+    private LocalDateTime requestedAt;
 
-	@Column(name = "reviewed_at")
-	private LocalDateTime reviewedAt;
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
 
-	@Size(max = 2000)
-	@Column(name = "remarks", length = 2000)
-	private String remarks;
+    @Size(max = 2000)
+    @Column(name = "remarks", length = 2000)
+    private String remarks;
 
-	@ToString.Exclude
-	@JsonBackReference("user-submitted-requests")
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "requested_by_user_id", nullable = false)
-	@NotNull
-	private User requestedBy;
+    @ToString.Exclude
+    @JsonBackReference("user-submitted-requests")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "requested_by_user_id", nullable = false)
+    @NotNull
+    private User requestedBy;
 
-	@ToString.Exclude
-	@JsonBackReference("user-reviewed-requests")
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "reviewed_by_user_id")
-	private User reviewedBy;
+    @ToString.Exclude
+    @JsonBackReference("user-reviewed-requests")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by_user_id")
+    private User reviewedBy;
+
+    public EventAdminRequest(User requestedBy, String requestReason) {
+        this.requestedBy = requestedBy;
+        this.requestReason = requestReason;
+        this.status = EventAdminRequestStatus.PENDING;
+    }
 }
