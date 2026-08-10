@@ -13,12 +13,16 @@ import com.campusone.campusone.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class RegistrationServiceImpl implements RegistrationService {
 
@@ -54,6 +58,16 @@ public class RegistrationServiceImpl implements RegistrationService {
                                 "User not found"
                         )
                 );
+
+        // Creator self-registration restriction
+        if (event.getCreatedBy() != null && event.getCreatedBy().equals(user.getId())) {
+            throw new RuntimeException("Event creators cannot register for their own events");
+        }
+
+        // Registration deadline check
+        if (event.getRegistrationDeadline() != null && LocalDate.now().isAfter(event.getRegistrationDeadline())) {
+            throw new RuntimeException("Registration deadline has passed");
+        }
 
 
 
@@ -123,8 +137,23 @@ public class RegistrationServiceImpl implements RegistrationService {
     public List<EventRegistration> getParticipants(
             Long eventId
     ) {
+        return getParticipants(eventId, null, null);
+    }
 
+    @Override
+    public List<EventRegistration> getParticipants(
+            Long eventId,
+            Long currentUserId
+    ) {
+        return getParticipants(eventId, currentUserId, null);
+    }
 
+    @Override
+    public List<EventRegistration> getParticipants(
+            Long eventId,
+            Long currentUserId,
+            String search
+    ) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(
                         () -> new RuntimeException(
@@ -132,10 +161,25 @@ public class RegistrationServiceImpl implements RegistrationService {
                         )
                 );
 
+        if (currentUserId != null) {
+            User caller = userRepository.findById(currentUserId).orElse(null);
+            boolean isAdmin = caller != null && "ADMIN".equalsIgnoreCase(caller.getRole());
+            if (!isAdmin && !event.getCreatedBy().equals(currentUserId)) {
+                throw new SecurityException("You can only view participant lists for events you created");
+            }
+        }
 
-        return registrationRepository
-                .findByEvent(event);
+        List<EventRegistration> registrations = registrationRepository.findByEvent(event);
 
+        if (search != null && !search.trim().isEmpty()) {
+            String keyword = search.trim().toLowerCase();
+            registrations = registrations.stream()
+                    .filter(r -> (r.getUser().getName() != null && r.getUser().getName().toLowerCase().contains(keyword))
+                            || (r.getUser().getEmail() != null && r.getUser().getEmail().toLowerCase().contains(keyword)))
+                    .collect(Collectors.toList());
+        }
+
+        return registrations;
     }
 
 

@@ -31,11 +31,17 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         User user = userRepository.findById(request.getCreatedBy())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
+        if (!isAdmin && !event.getCreatedBy().equals(user.getId())) {
+            throw new SecurityException("You can only post announcements for events you created");
+        }
+
         Announcement announcement = Announcement.builder()
                 .event(event)
                 .createdBy(user)
                 .title(request.getTitle())
                 .content(request.getContent())
+                .message(request.getContent())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -56,11 +62,26 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     public AnnouncementResponse updateAnnouncement(Long id, AnnouncementRequest request) {
+        return updateAnnouncement(id, request.getCreatedBy(), request);
+    }
+
+    @Override
+    public AnnouncementResponse updateAnnouncement(Long id, Long currentUserId, AnnouncementRequest request) {
         Announcement announcement = announcementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Announcement not found"));
 
+        Long ownerId = currentUserId != null ? currentUserId : request.getCreatedBy();
+        if (ownerId != null) {
+            User caller = userRepository.findById(ownerId).orElse(null);
+            boolean isAdmin = caller != null && "ADMIN".equalsIgnoreCase(caller.getRole());
+            if (!isAdmin && !announcement.getEvent().getCreatedBy().equals(ownerId)) {
+                throw new SecurityException("You can only update announcements on events you own");
+            }
+        }
+
         announcement.setTitle(request.getTitle());
         announcement.setContent(request.getContent());
+        announcement.setMessage(request.getContent());
         announcement.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(announcementRepository.save(announcement));
@@ -69,6 +90,22 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     public void deleteAnnouncement(Long id) {
         announcementRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteAnnouncement(Long id, Long currentUserId) {
+        Announcement announcement = announcementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Announcement not found"));
+
+        if (currentUserId != null) {
+            User caller = userRepository.findById(currentUserId).orElse(null);
+            boolean isAdmin = caller != null && "ADMIN".equalsIgnoreCase(caller.getRole());
+            if (!isAdmin && !announcement.getEvent().getCreatedBy().equals(currentUserId)) {
+                throw new SecurityException("You can only delete announcements on events you own");
+            }
+        }
+
+        announcementRepository.delete(announcement);
     }
 
     private AnnouncementResponse mapToResponse(Announcement announcement) {

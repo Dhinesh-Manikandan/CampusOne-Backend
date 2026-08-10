@@ -4,6 +4,8 @@ import com.campusone.campusone.dto.request.EventRequest;
 import com.campusone.campusone.dto.response.DashboardSummaryResponse;
 import com.campusone.campusone.dto.response.EventResponse;
 import com.campusone.campusone.entity.Event;
+import com.campusone.campusone.entity.EventRegistration;
+import com.campusone.campusone.repository.EventRegistrationRepository;
 import com.campusone.campusone.repository.EventRepository;
 import com.campusone.campusone.service.EventService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
+    private final EventRegistrationRepository registrationRepository;
 
     @Override
     public EventResponse createEvent(EventRequest request) {
@@ -36,7 +39,7 @@ public class EventServiceImpl implements EventService {
                 .maxParticipants(request.getMaxParticipants())
                 .bannerImage(request.getBannerImage())
                 .createdBy(request.getCreatedBy() != null ? request.getCreatedBy() : 0L)
-                .status(request.getStatus())
+                .status(sanitizeStatus(request.getStatus()))
                 .registeredCount(0)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -81,10 +84,17 @@ public class EventServiceImpl implements EventService {
         event.setRegistrationDeadline(request.getRegistrationDeadline());
         event.setMaxParticipants(request.getMaxParticipants());
         event.setBannerImage(request.getBannerImage());
-        event.setStatus(request.getStatus());
+        event.setStatus(sanitizeStatus(request.getStatus()));
         event.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(eventRepository.save(event));
+    }
+
+    private String sanitizeStatus(String status) {
+        if (status == null || status.trim().isEmpty() || "PUBLISHED".equalsIgnoreCase(status)) {
+            return "UPCOMING";
+        }
+        return status.toUpperCase();
     }
 
     @Override
@@ -117,7 +127,10 @@ public class EventServiceImpl implements EventService {
                 .filter(event -> event.getEventDate() != null && !event.getEventDate().isBefore(today))
                 .count();
         long totalRegistrations = events.stream()
-                .mapToLong(event -> event.getRegisteredCount() == null ? 0 : event.getRegisteredCount())
+                .mapToLong(event -> {
+                    List<EventRegistration> regs = registrationRepository.findByEvent(event);
+                    return regs != null ? regs.size() : (event.getRegisteredCount() != null ? event.getRegisteredCount() : 0);
+                })
                 .sum();
         long completedEvents = events.stream()
                 .filter(event -> "COMPLETED".equalsIgnoreCase(event.getStatus()))
@@ -139,7 +152,8 @@ public class EventServiceImpl implements EventService {
     public long getParticipantCount(Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
-        return event.getRegisteredCount() == null ? 0 : event.getRegisteredCount();
+        List<EventRegistration> regs = registrationRepository.findByEvent(event);
+        return regs != null ? regs.size() : (event.getRegisteredCount() != null ? event.getRegisteredCount() : 0);
     }
 
     public void validateEventRequest(EventRequest request) {

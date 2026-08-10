@@ -32,6 +32,9 @@ public class Announcement {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "message", columnDefinition = "TEXT")
+    private String message;
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 

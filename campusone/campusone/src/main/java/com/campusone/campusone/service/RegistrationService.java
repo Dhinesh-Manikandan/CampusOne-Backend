@@ -20,6 +20,17 @@ public interface RegistrationService {
             Long eventId
     );
 
+    List<EventRegistration> getParticipants(
+            Long eventId,
+            Long currentUserId
+    );
+
+    List<EventRegistration> getParticipants(
+            Long eventId,
+            Long currentUserId,
+            String search
+    );
+
 
     void cancelRegistration(
             Long eventId,

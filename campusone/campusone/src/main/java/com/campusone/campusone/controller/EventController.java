@@ -9,6 +9,7 @@ import com.campusone.campusone.service.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +25,14 @@ public class EventController {
     private final UserRepository userRepository;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN')")
     public ResponseEntity<?> createEvent(@RequestBody EventRequest request) {
         try {
             Long currentUserId = getCurrentUserId();
             request.setCreatedBy(currentUserId);
             return ResponseEntity.ok(eventService.createEvent(request));
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Map.of("error", ex.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage() != null ? ex.getMessage() : "Failed to create event"));
         }
     }
 
@@ -45,24 +47,36 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EventResponse> updateEvent(@PathVariable Long id, @RequestBody EventRequest request) {
-        Long currentUserId = getCurrentUserId();
-        return ResponseEntity.ok(eventService.updateEvent(id, currentUserId, request));
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody EventRequest request) {
+        try {
+            Long currentUserId = getCurrentUserId();
+            return ResponseEntity.ok(eventService.updateEvent(id, currentUserId, request));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage() != null ? ex.getMessage() : "Failed to update event"));
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteEvent(@PathVariable Long id) {
-        Long currentUserId = getCurrentUserId();
-        eventService.deleteEvent(id, currentUserId);
-        return ResponseEntity.ok("Event deleted successfully");
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> deleteEvent(@PathVariable Long id) {
+        try {
+            Long currentUserId = getCurrentUserId();
+            eventService.deleteEvent(id, currentUserId);
+            return ResponseEntity.ok(java.util.Map.of("message", "Event deleted successfully"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage() != null ? ex.getMessage() : "Failed to delete event"));
+        }
     }
 
     @GetMapping("/admin/{createdBy}")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN')")
     public ResponseEntity<List<EventResponse>> getEventsByAdmin(@PathVariable Long createdBy) {
         return ResponseEntity.ok(eventService.getEventsByAdmin(createdBy));
     }
 
     @GetMapping("/admin/{createdBy}/dashboard")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN')")
     public ResponseEntity<DashboardSummaryResponse> getDashboardSummary(@PathVariable Long createdBy) {
         return ResponseEntity.ok(eventService.getDashboardSummary(createdBy));
     }
