@@ -18,6 +18,8 @@ import java.util.List;
 
 
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class RegistrationServiceImpl implements RegistrationService {
@@ -32,6 +34,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     @Override
+    @Transactional
     public EventRegistration register(
             Long eventId,
             RegistrationRequest request
@@ -143,6 +146,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     @Override
+    @Transactional
     public void cancelRegistration(
             Long eventId,
             Long userId

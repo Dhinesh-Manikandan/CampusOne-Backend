@@ -20,53 +20,44 @@ import lombok.RequiredArgsConstructor;
 
 
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
 public class RegistrationController {
 
-
-
     private final RegistrationService registrationService;
-
-
 
     // Register user for an event
     @PostMapping("/{eventId}/register")
+    @PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
     public ResponseEntity<EventRegistration> register(
             @PathVariable Long eventId,
             @RequestBody RegistrationRequest request
     ){
-
         return ResponseEntity.ok(
                 registrationService.register(
                         eventId,
                         request
                 )
         );
-
     }
-
-
-
 
     // Get all participants of an event
     @GetMapping("/{eventId}/participants")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
     public ResponseEntity<List<EventRegistration>> getParticipants(
             @PathVariable Long eventId
     ){
-
         return ResponseEntity.ok(
                 registrationService.getParticipants(eventId)
         );
-
     }
-
-
-
 
     // Cancel registration
     @DeleteMapping("/{eventId}/register/{userId}")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN', 'STUDENT')")
     public ResponseEntity<String> cancelRegistration(
             @PathVariable Long eventId,
             @PathVariable Long userId
