@@ -1,16 +1,19 @@
 package com.campusone.campusone.service.impl;
 
+import com.campusone.campusone.entity.User;
 import com.campusone.campusone.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.stream.Collectors;
 
-@Service
+
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -18,13 +21,22 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        com.campusone.campusone.entity.User user = userRepository.findByEmail(email)
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return new User(
+        return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                Collections.singletonList(() -> "ROLE_" + user.getRole().toUpperCase())
+                user.isEnabled(),
+                true,
+                true,
+                true,
+                user.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority(
+                                role.getRoleName().name()
+                        ))
+                        .collect(Collectors.toList())
         );
     }
 }

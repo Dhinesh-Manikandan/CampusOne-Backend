@@ -1,6 +1,5 @@
 package com.campusone.campusone.service.impl;
 
-
 import com.campusone.campusone.dto.request.LoginRequest;
 import com.campusone.campusone.dto.request.RegisterRequest;
 import com.campusone.campusone.entity.User;
@@ -28,15 +27,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public User registerUser(RegisterRequest request) {
 
-        if(userRepository.existsByEmail(request.getEmail())){
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
         User user = User.builder()
-                .name(request.getName())
+                .fullName(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole())
+                .enabled(true)
                 .build();
 
         return userRepository.save(user);
@@ -44,18 +43,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String loginUser(LoginRequest request) {
+
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        request.identifier(),
+                        request.password()
+                )
         );
 
         if (!authentication.isAuthenticated()) {
             throw new RuntimeException("Invalid credentials");
         }
 
-        org.springframework.security.core.userdetails.UserDetails userDetails =
-                (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
+        User user = userRepository.findByEmail(request.identifier())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return jwtService.generateToken(userDetails);
+        return jwtService.generateAccessToken(user);
     }
-
 }
