@@ -86,7 +86,7 @@ public class User {
 
 	@NotNull
 	@Min(1)
-	@Column(name = "academic_year", nullable = false)
+	@Column(name = "year", nullable = false)
 	private Integer year;
 
 	@NotBlank
