@@ -1,0 +1,18 @@
+### Create Event
+POST http://localhost:8080/api/events
+Content-Type: application/json
+
+{
+    "title": "AI Workshop",
+    "description": "Workshop on Artificial Intelligence and Machine Learning",
+    "category": "Technical",
+    "venue": "Anna University",
+    "eventDate": "2026-08-20",
+    "startTime": "10:00",
+    "endTime": "13:00",
+    "registrationDeadline": "2026-08-18",
+    "maxParticipants": 100,
+    "bannerImage": "ai-workshop.png",
+    "createdBy": 1,
+    "status": "UPCOMING"
+}
