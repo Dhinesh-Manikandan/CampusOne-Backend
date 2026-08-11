@@ -67,7 +67,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        if (!event.getCreatedBy().equals(currentUserId)) {
+        if (!isCurrentUserAppAdmin() && !event.getCreatedBy().equals(currentUserId)) {
             throw new SecurityException("You can only update your own events");
         }
 
@@ -92,11 +92,19 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        if (!event.getCreatedBy().equals(currentUserId)) {
+        if (!isCurrentUserAppAdmin() && !event.getCreatedBy().equals(currentUserId)) {
             throw new SecurityException("You can only delete your own events");
         }
 
         eventRepository.deleteById(id);
+    }
+
+    private boolean isCurrentUserAppAdmin() {
+        org.springframework.security.core.Authentication authentication =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) return false;
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_APP_ADMIN".equals(a.getAuthority()));
     }
 
     @Override

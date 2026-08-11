@@ -25,7 +25,7 @@ public class EventController {
     private final UserRepository userRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<?> createEvent(@RequestBody EventRequest request) {
         try {
             Long currentUserId = getCurrentUserId();
@@ -47,14 +47,14 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<EventResponse> updateEvent(@PathVariable Long id, @RequestBody EventRequest request) {
         Long currentUserId = getCurrentUserId();
         return ResponseEntity.ok(eventService.updateEvent(id, currentUserId, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<String> deleteEvent(@PathVariable Long id) {
         Long currentUserId = getCurrentUserId();
         eventService.deleteEvent(id, currentUserId);
@@ -62,13 +62,13 @@ public class EventController {
     }
 
     @GetMapping("/admin/{createdBy}")
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<List<EventResponse>> getEventsByAdmin(@PathVariable Long createdBy) {
         return ResponseEntity.ok(eventService.getEventsByAdmin(createdBy));
     }
 
     @GetMapping("/admin/{createdBy}/dashboard")
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<DashboardSummaryResponse> getDashboardSummary(@PathVariable Long createdBy) {
         return ResponseEntity.ok(eventService.getDashboardSummary(createdBy));
     }

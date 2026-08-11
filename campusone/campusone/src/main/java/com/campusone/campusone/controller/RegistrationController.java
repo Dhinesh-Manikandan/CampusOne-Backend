@@ -31,7 +31,7 @@ public class RegistrationController {
 
     // Register user for an event
     @PostMapping("/{eventId}/register")
-    @PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<EventRegistration> register(
             @PathVariable Long eventId,
             @RequestBody RegistrationRequest request
@@ -46,7 +46,7 @@ public class RegistrationController {
 
     // Get all participants of an event
     @GetMapping("/{eventId}/participants")
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<List<EventRegistration>> getParticipants(
             @PathVariable Long eventId
     ){
@@ -57,7 +57,7 @@ public class RegistrationController {
 
     // Cancel registration
     @DeleteMapping("/{eventId}/register/{userId}")
-    @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'ADMIN', 'APP_ADMIN', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<String> cancelRegistration(
             @PathVariable Long eventId,
             @PathVariable Long userId

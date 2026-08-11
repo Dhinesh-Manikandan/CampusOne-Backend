@@ -74,6 +74,7 @@ public class User {
 	@Column(name = "email", nullable = false, length = 254, unique = true)
 	private String email;
 
+	@com.fasterxml.jackson.annotation.JsonIgnore
 	@NotBlank
 	@Size(min = 8, max = 255)
 	@Column(name = "password", nullable = false, length = 255)
