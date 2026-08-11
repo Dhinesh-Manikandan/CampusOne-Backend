@@ -168,15 +168,14 @@ public class RegistrationServiceImpl implements RegistrationService {
                         )
                 );
 
-
-
-        registrationRepository
-                .deleteByEventAndUser(
-                        event,
-                        user
+        EventRegistration registration = registrationRepository.findByEventAndUser(event, user)
+                .orElseThrow(
+                        () -> new RuntimeException(
+                                "Registration not found for user and event"
+                        )
                 );
 
-
+        registrationRepository.delete(registration);
 
         if(event.getRegisteredCount() != null
                 &&

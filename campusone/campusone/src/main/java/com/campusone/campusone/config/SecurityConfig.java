@@ -52,7 +52,9 @@ public class SecurityConfig {
 						.accessDeniedHandler((request, response, exception) -> writeError(response, HttpStatus.FORBIDDEN,
 								"Forbidden", request.getRequestURI())))
 				.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
-						"/api/auth/refresh").permitAll().requestMatchers(HttpMethod.POST, "/api/app-admin-requests")
+						"/api/auth/refresh").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/events", "/api/events/{id:[0-9]+}", "/api/events/{id:[0-9]+}/participants/count", "/api/announcements/event/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/app-admin-requests")
 						.hasAnyRole("STUDENT", "EVENT_ADMIN").requestMatchers("/error").permitAll()
 						.requestMatchers("/api/admin/**").hasRole("APP_ADMIN").requestMatchers("/api/event-admin/**")
 						.hasAnyRole("EVENT_ADMIN", "APP_ADMIN").requestMatchers("/api/student/**")
