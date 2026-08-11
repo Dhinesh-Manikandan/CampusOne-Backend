@@ -1,77 +1,92 @@
 package com.campusone.campusone.config;
 
+import java.io.IOException;
+import java.time.Instant;
+
+import com.campusone.campusone.dto.response.ApiErrorResponse;
 import com.campusone.campusone.security.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import com.campusone.campusone.security.CustomUserDetailsService;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final UserDetailsService userDetailsService;
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final CustomUserDetailsService customUserDetailsService;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+			CustomUserDetailsService customUserDetailsService) {
+		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+		this.customUserDetailsService = customUserDetailsService;
+	}
 
-        http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.setCharacterEncoding("UTF-8");
-                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
-                        })
-                );
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http.csrf(AbstractHttpConfigurer::disable)
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.httpBasic(AbstractHttpConfigurer::disable)
+				.formLogin(AbstractHttpConfigurer::disable)
+				.cors(Customizer.withDefaults())
+				.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, exception) -> {
+					Object authError = request.getAttribute("auth_error_message");
+					String message = authError instanceof String ? (String) authError : "Unauthorized";
+					writeError(response, HttpStatus.UNAUTHORIZED, message, request.getRequestURI());
+				})
+						.accessDeniedHandler((request, response, exception) -> writeError(response, HttpStatus.FORBIDDEN,
+								"Forbidden", request.getRequestURI())))
+				.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
+						"/api/auth/refresh").permitAll().requestMatchers(HttpMethod.POST, "/api/app-admin-requests")
+						.hasAnyRole("STUDENT", "EVENT_ADMIN").requestMatchers("/error").permitAll()
+						.requestMatchers("/api/admin/**").hasRole("APP_ADMIN").requestMatchers("/api/event-admin/**")
+						.hasAnyRole("EVENT_ADMIN", "APP_ADMIN").requestMatchers("/api/student/**")
+						.hasAnyRole("STUDENT", "EVENT_ADMIN", "APP_ADMIN")
+						.anyRequest().authenticated())
+				.authenticationManager(authenticationManager())
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+		return http.build();
+	}
 
-        http.addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class
-        );
+	@Bean
+	public AuthenticationManager authenticationManager() {
+		DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(customUserDetailsService);
+		authenticationProvider.setPasswordEncoder(passwordEncoder());
+		return new ProviderManager(authenticationProvider);
+	}
 
-        return http.build();
-    }
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+	private void writeError(jakarta.servlet.http.HttpServletResponse response, HttpStatus status, String message,
+			String path) throws IOException {
+		response.setStatus(status.value());
+		response.setContentType("application/json");
+		ApiErrorResponse error = new ApiErrorResponse(Instant.now(), status.value(), status.getReasonPhrase(),
+				message, path);
+		response.getWriter().write("{\"timestamp\":\"" + error.timestamp() + "\",\"status\":"
+				+ error.status() + ",\"error\":\"" + escapeJson(error.error()) + "\",\"message\":\""
+				+ escapeJson(error.message()) + "\",\"path\":\"" + escapeJson(error.path()) + "\"}");
+	}
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config
-    ) throws Exception {
-        return config.getAuthenticationManager();
-    }
+	private String escapeJson(String value) {
+		return value.replace("\\", "\\\\").replace("\"", "\\\"");
+	}
 }

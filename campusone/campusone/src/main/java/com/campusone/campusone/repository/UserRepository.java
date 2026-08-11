@@ -1,19 +1,23 @@
 package com.campusone.campusone.repository;
 
-import com.campusone.campusone.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import java.util.List;
 import java.util.Optional;
 
+import com.campusone.campusone.entity.User;
+import com.campusone.campusone.entity.enums.RoleName;
 
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+
 public interface UserRepository extends JpaRepository<User, Long> {
 
+	Optional<User> findByEmailIgnoreCaseOrRegistrationNumberIgnoreCase(String email, String registrationNumber);
 
-    Optional<User> findByEmail(String email);
+	boolean existsByEmailIgnoreCaseOrRegistrationNumberIgnoreCase(String email, String registrationNumber);
 
+	List<User> findDistinctByRoles_RoleName(RoleName roleName);
 
-    boolean existsByEmail(String email);
+	Optional<User> findByEmail(String email);
+
+	boolean existsByEmail(String email);
 
 }
