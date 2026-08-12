@@ -20,6 +20,10 @@ public interface RegistrationService {
             Long eventId
     );
 
+    List<EventRegistration> getUserRegistrations(
+            Long userId
+    );
+
 
     void cancelRegistration(
             Long eventId,

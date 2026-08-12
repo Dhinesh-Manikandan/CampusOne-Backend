@@ -55,6 +55,17 @@ public class RegistrationController {
         );
     }
 
+    // Get all registrations for a specific student / user
+    @GetMapping("/user/{userId}/registrations")
+    @PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN', 'ADMIN', 'APP_ADMIN')")
+    public ResponseEntity<List<EventRegistration>> getUserRegistrations(
+            @PathVariable Long userId
+    ){
+        return ResponseEntity.ok(
+                registrationService.getUserRegistrations(userId)
+        );
+    }
+
     // Cancel registration
     @DeleteMapping("/{eventId}/register/{userId}")
     @PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN', 'APP_ADMIN')")
