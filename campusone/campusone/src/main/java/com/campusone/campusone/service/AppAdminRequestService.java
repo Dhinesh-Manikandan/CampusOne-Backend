@@ -13,6 +13,8 @@ public interface AppAdminRequestService {
 
 	List<AppAdminRequestResponse> listRequests(AppAdminRequestStatus status);
 
+	List<AppAdminRequestResponse> getUserRequests(String username);
+
 	AppAdminRequestResponse approveRequest(Long requestId, String reviewerUsername);
 
 	AppAdminRequestResponse rejectRequest(Long requestId, String reviewerUsername, AppAdminRequestReviewRequest request);

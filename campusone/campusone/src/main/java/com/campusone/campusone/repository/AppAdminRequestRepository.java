@@ -17,5 +17,7 @@ public interface AppAdminRequestRepository extends JpaRepository<AppAdminRequest
 
 	Optional<AppAdminRequest> findByRequestedByAndStatus(User requestedBy, AppAdminRequestStatus status);
 
+	List<AppAdminRequest> findByRequestedByOrderByRequestedAtDesc(User requestedBy);
+
 	boolean existsByRequestedByAndStatus(User requestedBy, AppAdminRequestStatus status);
 }

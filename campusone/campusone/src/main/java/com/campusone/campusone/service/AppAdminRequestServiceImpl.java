@@ -64,6 +64,15 @@ public class AppAdminRequestServiceImpl implements AppAdminRequestService {
 	}
 
 	@Override
+	public List<AppAdminRequestResponse> getUserRequests(String username) {
+		User user = findUser(username);
+		return appAdminRequestRepository.findByRequestedByOrderByRequestedAtDesc(user)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Override
 	public AppAdminRequestResponse approveRequest(Long requestId, String reviewerUsername) {
 		AppAdminRequest request = findRequest(requestId);
 		if (request.getStatus() != AppAdminRequestStatus.PENDING) {
