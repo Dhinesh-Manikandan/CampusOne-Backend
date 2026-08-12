@@ -36,6 +36,12 @@ public class AppAdminRequestController {
 		return appAdminRequestService.createRequest(principal.getName(), request);
 	}
 
+	@GetMapping("/api/app-admin-requests/my")
+	@PreAuthorize("hasAnyRole('STUDENT', 'EVENT_ADMIN')")
+	public List<AppAdminRequestResponse> myRequests(Principal principal) {
+		return appAdminRequestService.getUserRequests(principal.getName());
+	}
+
 	@GetMapping("/api/admin/app-admin-requests")
 	@PreAuthorize("hasRole('APP_ADMIN')")
 	public List<AppAdminRequestResponse> list(@RequestParam(required = false) AppAdminRequestStatus status) {
