@@ -76,7 +76,7 @@ public class JwtService {
 	private String generateToken(User user, Duration ttl, String tokenType) {
 		Date issuedAt = new Date();
 		Date expiration = Date.from(Instant.now().plus(ttl));
-		return Jwts.builder().subject(user.getEmail()).issuer(jwtProperties.issuer()).issuedAt(issuedAt)
+		return Jwts.builder().id(java.util.UUID.randomUUID().toString()).subject(user.getEmail()).issuer(jwtProperties.issuer()).issuedAt(issuedAt)
 				.expiration(expiration).claim("token_type", tokenType).claim("user_id", user.getId())
 				.claim("roles", user.getRoles().stream().map(role -> role.getRoleName().name()).toList())
 				.signWith(secretKey()).compact();
