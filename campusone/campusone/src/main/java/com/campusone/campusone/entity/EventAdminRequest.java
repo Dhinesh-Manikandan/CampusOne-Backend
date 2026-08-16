@@ -31,7 +31,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Table(name = "event_admin_requests")
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class EventAdminRequest {
 
