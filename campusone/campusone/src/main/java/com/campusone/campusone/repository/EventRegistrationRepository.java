@@ -26,6 +26,10 @@ public interface EventRegistrationRepository
             Event event
     );
 
+    List<EventRegistration> findByUserId(
+            Long userId
+    );
+
 
     void deleteByEventAndUser(
             Event event,

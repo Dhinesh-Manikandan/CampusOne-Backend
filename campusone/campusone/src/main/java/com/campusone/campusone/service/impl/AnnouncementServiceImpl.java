@@ -28,8 +28,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     public AnnouncementResponse createAnnouncement(AnnouncementRequest request) {
         Event event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> new RuntimeException("Event not found"));
-        User user = userRepository.findById(request.getCreatedBy())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Long creatorId = request.getCreatedBy() != null ? request.getCreatedBy() : event.getCreatedBy();
+        User user = (creatorId != null ? userRepository.findById(creatorId) : java.util.Optional.<User>empty())
+                .orElseGet(() -> userRepository.findAll().stream().findFirst().orElseThrow(() -> new RuntimeException("No valid user found to post announcement")));
 
         Announcement announcement = Announcement.builder()
                 .event(event)

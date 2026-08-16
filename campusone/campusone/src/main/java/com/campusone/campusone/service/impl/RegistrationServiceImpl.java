@@ -141,6 +141,13 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     }
 
+    @Override
+    public List<EventRegistration> getUserRegistrations(
+            Long userId
+    ) {
+        return registrationRepository.findByUserId(userId);
+    }
+
 
 
 
