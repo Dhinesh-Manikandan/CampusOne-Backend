@@ -42,19 +42,19 @@ public class EventAdminRequestController {
 	}
 
 	@GetMapping("/api/admin/event-admin-requests")
-	@PreAuthorize("hasRole('APP_ADMIN')")
+	@PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
 	public List<EventAdminRequestResponse> list(@RequestParam(required = false) EventAdminRequestStatus status) {
 		return eventAdminRequestService.listRequests(status);
 	}
 
 	@PostMapping("/api/admin/event-admin-requests/{requestId}/approve")
-	@PreAuthorize("hasRole('APP_ADMIN')")
+	@PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
 	public EventAdminRequestResponse approve(@PathVariable Long requestId, Principal principal) {
 		return eventAdminRequestService.approveRequest(requestId, principal.getName());
 	}
 
 	@PostMapping("/api/admin/event-admin-requests/{requestId}/reject")
-	@PreAuthorize("hasRole('APP_ADMIN')")
+	@PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
 	public EventAdminRequestResponse reject(@PathVariable Long requestId,
 			@Valid @RequestBody EventAdminRequestReviewRequest request, Principal principal) {
 		return eventAdminRequestService.rejectRequest(requestId, principal.getName(), request);
