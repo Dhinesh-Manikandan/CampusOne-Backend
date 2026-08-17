@@ -56,6 +56,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/events", "/api/events/{id:[0-9]+}", "/api/events/{id:[0-9]+}/participants/count", "/api/announcements/event/**").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/app-admin-requests")
 						.hasAnyRole("STUDENT", "EVENT_ADMIN").requestMatchers("/error").permitAll()
+						.requestMatchers("/api/admin/event-admin-requests/**").hasAnyRole("EVENT_ADMIN", "APP_ADMIN")
 						.requestMatchers("/api/admin/**").hasRole("APP_ADMIN").requestMatchers("/api/event-admin/**")
 						.hasAnyRole("EVENT_ADMIN", "APP_ADMIN").requestMatchers("/api/student/**")
 						.hasAnyRole("STUDENT", "EVENT_ADMIN", "APP_ADMIN")
