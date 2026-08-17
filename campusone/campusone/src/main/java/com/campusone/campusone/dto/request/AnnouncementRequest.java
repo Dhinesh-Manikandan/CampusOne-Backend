@@ -6,6 +6,7 @@ import lombok.Data;
 public class AnnouncementRequest {
     private String title;
     private String content;
+    private String priority;
     private Long eventId;
     private Long createdBy;
 }

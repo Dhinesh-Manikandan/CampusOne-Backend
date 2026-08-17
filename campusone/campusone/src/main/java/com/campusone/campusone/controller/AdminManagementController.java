@@ -34,4 +34,15 @@ public class AdminManagementController {
 	public MessageResponse delete(@PathVariable Long adminId, Principal principal) {
 		return adminManagementService.removeAppAdmin(adminId, principal.getName());
 	}
+
+	@GetMapping("/event-admins")
+	@PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
+	public List<UserResponse> listEventAdmins() {
+		return adminManagementService.listEventAdmins();
+	}
+
+	@DeleteMapping("/event-admins/{adminId}")
+	public MessageResponse deleteEventAdmin(@PathVariable Long adminId) {
+		return adminManagementService.removeEventAdmin(adminId);
+	}
 }

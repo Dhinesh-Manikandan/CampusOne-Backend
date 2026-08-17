@@ -56,6 +56,19 @@ public class AdminManagementServiceImpl {
 		return new MessageResponse("Admin role removed successfully");
 	}
 
+	public List<UserResponse> listEventAdmins() {
+		return userRepository.findDistinctByRoles_RoleName(RoleName.ROLE_EVENT_ADMIN).stream().map(this::toUserResponse)
+				.toList();
+	}
+
+	public MessageResponse removeEventAdmin(Long adminId) {
+		User admin = userRepository.findById(adminId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event Admin not found"));
+		admin.getRoles().removeIf(role -> role.getRoleName() == RoleName.ROLE_EVENT_ADMIN);
+		userRepository.save(admin);
+		return new MessageResponse("Event Admin role removed successfully");
+	}
+
 	private UserResponse toUserResponse(User user) {
 		Set<String> roles = new LinkedHashSet<>();
 		user.getRoles().forEach(role -> roles.add(role.getRoleName().name()));

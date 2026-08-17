@@ -32,6 +32,10 @@ public class Announcement {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(nullable = false, columnDefinition = "VARCHAR(25) DEFAULT 'NORMAL'")
+    @Builder.Default
+    private String priority = "NORMAL";
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 

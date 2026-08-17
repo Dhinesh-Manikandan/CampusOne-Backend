@@ -17,6 +17,7 @@ public class AnnouncementResponse {
     private Long createdBy;
     private String title;
     private String content;
+    private String priority;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

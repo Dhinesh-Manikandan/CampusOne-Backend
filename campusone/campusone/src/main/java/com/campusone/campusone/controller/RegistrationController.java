@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusone.campusone.dto.request.RegistrationRequest;
@@ -44,14 +45,15 @@ public class RegistrationController {
         );
     }
 
-    // Get all participants of an event
+    // Get all participants of an event with optional search query
     @GetMapping("/{eventId}/participants")
     @PreAuthorize("hasAnyRole('EVENT_ADMIN', 'APP_ADMIN')")
     public ResponseEntity<List<EventRegistration>> getParticipants(
-            @PathVariable Long eventId
+            @PathVariable Long eventId,
+            @RequestParam(required = false) String search
     ){
         return ResponseEntity.ok(
-                registrationService.getParticipants(eventId)
+                registrationService.getParticipants(eventId, search)
         );
     }
 
