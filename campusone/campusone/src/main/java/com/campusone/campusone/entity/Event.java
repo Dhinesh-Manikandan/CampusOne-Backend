@@ -34,6 +34,7 @@ public class Event {
     private String category;
 
 
+    @Column(columnDefinition = "TEXT")
     private String venue;
 
 
@@ -57,6 +58,7 @@ public class Event {
     private Integer registeredCount = 0;
 
 
+    @Column(columnDefinition = "TEXT")
     private String bannerImage;
 
 

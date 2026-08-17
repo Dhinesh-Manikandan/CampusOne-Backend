@@ -38,6 +38,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .createdBy(user)
                 .title(request.getTitle())
                 .content(request.getContent())
+                .priority(request.getPriority() != null ? request.getPriority() : "NORMAL")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -63,6 +64,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         announcement.setTitle(request.getTitle());
         announcement.setContent(request.getContent());
+        if (request.getPriority() != null) {
+            announcement.setPriority(request.getPriority());
+        }
         announcement.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(announcementRepository.save(announcement));
@@ -80,6 +84,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .createdBy(announcement.getCreatedBy().getId())
                 .title(announcement.getTitle())
                 .content(announcement.getContent())
+                .priority(announcement.getPriority() != null ? announcement.getPriority() : "NORMAL")
                 .createdAt(announcement.getCreatedAt())
                 .updatedAt(announcement.getUpdatedAt())
                 .build();

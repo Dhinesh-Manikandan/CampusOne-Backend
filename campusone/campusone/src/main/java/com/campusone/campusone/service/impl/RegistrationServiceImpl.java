@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 
@@ -126,8 +127,14 @@ public class RegistrationServiceImpl implements RegistrationService {
     public List<EventRegistration> getParticipants(
             Long eventId
     ) {
+        return getParticipants(eventId, null);
+    }
 
-
+    @Override
+    public List<EventRegistration> getParticipants(
+            Long eventId,
+            String search
+    ) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(
                         () -> new RuntimeException(
@@ -135,10 +142,22 @@ public class RegistrationServiceImpl implements RegistrationService {
                         )
                 );
 
+        List<EventRegistration> list = registrationRepository.findByEvent(event);
+        if (search == null || search.trim().isEmpty()) {
+            return list;
+        }
 
-        return registrationRepository
-                .findByEvent(event);
+        String q = search.toLowerCase().trim();
+        return list.stream().filter(reg -> {
+            if (reg.getUser() == null) return false;
+            User u = reg.getUser();
+            String fullName = u.getFullName() != null ? u.getFullName().toLowerCase() : "";
+            String email = u.getEmail() != null ? u.getEmail().toLowerCase() : "";
+            String regNo = u.getRegistrationNumber() != null ? u.getRegistrationNumber().toLowerCase() : "";
+            String dept = u.getDepartment() != null ? u.getDepartment().toLowerCase() : "";
 
+            return fullName.contains(q) || email.contains(q) || regNo.contains(q) || dept.contains(q);
+        }).collect(Collectors.toList());
     }
 
     @Override

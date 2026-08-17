@@ -20,6 +20,11 @@ public interface RegistrationService {
             Long eventId
     );
 
+    List<EventRegistration> getParticipants(
+            Long eventId,
+            String search
+    );
+
     List<EventRegistration> getUserRegistrations(
             Long userId
     );
