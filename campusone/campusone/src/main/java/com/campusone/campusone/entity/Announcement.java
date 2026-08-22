@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnDefault;
+
 @Entity
 @Table(name = "announcements")
 @Getter
@@ -32,7 +34,8 @@ public class Announcement {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(nullable = false, columnDefinition = "VARCHAR(25) DEFAULT 'NORMAL'")
+    @Column(nullable = false, length = 25)
+    @ColumnDefault("'NORMAL'")
     @Builder.Default
     private String priority = "NORMAL";
 

@@ -41,6 +41,10 @@ public class EventRequest {
 
     private String bannerImage;
 
+    private String pdfFile;
+
+    private String pdfFileName;
+
 
     private Long createdBy;
 

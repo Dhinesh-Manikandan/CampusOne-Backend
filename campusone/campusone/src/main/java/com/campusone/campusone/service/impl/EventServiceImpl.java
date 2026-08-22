@@ -35,6 +35,8 @@ public class EventServiceImpl implements EventService {
                 .registrationDeadline(request.getRegistrationDeadline())
                 .maxParticipants(request.getMaxParticipants())
                 .bannerImage(request.getBannerImage())
+                .pdfFile(request.getPdfFile())
+                .pdfFileName(request.getPdfFileName())
                 .createdBy(request.getCreatedBy() != null ? request.getCreatedBy() : 0L)
                 .status(request.getStatus())
                 .registeredCount(0)
@@ -81,6 +83,8 @@ public class EventServiceImpl implements EventService {
         event.setRegistrationDeadline(request.getRegistrationDeadline());
         event.setMaxParticipants(request.getMaxParticipants());
         event.setBannerImage(request.getBannerImage());
+        event.setPdfFile(request.getPdfFile());
+        event.setPdfFileName(request.getPdfFileName());
         event.setStatus(request.getStatus());
         event.setUpdatedAt(LocalDateTime.now());
 
@@ -180,6 +184,8 @@ public class EventServiceImpl implements EventService {
         response.setMaxParticipants(event.getMaxParticipants());
         response.setRegisteredCount(event.getRegisteredCount());
         response.setBannerImage(event.getBannerImage());
+        response.setPdfFile(event.getPdfFile());
+        response.setPdfFileName(event.getPdfFileName());
         response.setCreatedBy(event.getCreatedBy());
         response.setStatus(event.getStatus());
         response.setCreatedAt(event.getCreatedAt());

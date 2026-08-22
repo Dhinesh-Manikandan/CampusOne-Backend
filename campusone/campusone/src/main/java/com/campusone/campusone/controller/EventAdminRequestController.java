@@ -18,17 +18,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.campusone.campusone.dto.response.UserResponse;
-import com.campusone.campusone.service.AdminManagementServiceImpl;
+import com.campusone.campusone.service.AdminManagementService;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class EventAdminRequestController {
 
 	private final EventAdminRequestService eventAdminRequestService;
-	private final AdminManagementServiceImpl adminManagementService;
+	private final AdminManagementService adminManagementService;
 
 	public EventAdminRequestController(EventAdminRequestService eventAdminRequestService,
-			AdminManagementServiceImpl adminManagementService) {
+			AdminManagementService adminManagementService) {
 		this.eventAdminRequestService = eventAdminRequestService;
 		this.adminManagementService = adminManagementService;
 	}
