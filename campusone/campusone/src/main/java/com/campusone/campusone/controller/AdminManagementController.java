@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.campusone.campusone.dto.response.MessageResponse;
 import com.campusone.campusone.dto.response.UserResponse;
-import com.campusone.campusone.service.AdminManagementServiceImpl;
+import com.campusone.campusone.service.AdminManagementService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('APP_ADMIN')")
 public class AdminManagementController {
 
-	private final AdminManagementServiceImpl adminManagementService;
+	private final AdminManagementService adminManagementService;
 
-	public AdminManagementController(AdminManagementServiceImpl adminManagementService) {
+	public AdminManagementController(AdminManagementService adminManagementService) {
 		this.adminManagementService = adminManagementService;
 	}
 

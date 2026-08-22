@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional
-public class AdminManagementServiceImpl {
+public class AdminManagementServiceImpl implements AdminManagementService {
 
 	private final UserRepository userRepository;
 

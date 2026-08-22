@@ -61,6 +61,11 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String bannerImage;
 
+    @Column(columnDefinition = "TEXT")
+    private String pdfFile;
+
+    private String pdfFileName;
+
 
     @Column(nullable = false)
     private Long createdBy;
