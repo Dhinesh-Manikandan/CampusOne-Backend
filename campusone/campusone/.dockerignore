@@ -1,0 +1,49 @@
+# Build artifacts
+target/
+*.jar
+*.war
+
+# Version control
+.git/
+.gitignore
+
+# CI/CD & Docker files
+Dockerfile
+.dockerignore
+Jenkinsfile
+
+# IDE and Editor directories
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.project
+.classpath
+.factorypath
+.springBeans
+.sts4-cache
+
+# Logs and temporary files
+*.log
+logs/
+temp/
+tmp/
+
+# Maven wrapper cache and binaries (source pom.xml is sufficient for builder image)
+.mvn/wrapper/maven-wrapper.jar
+mvnw
+mvnw.cmd
+
+# Scratch test files and local documentation
+HELP.md
+api-test.http
+request*.json
+update*.json
+JwtUtil.java
+
+# Environment and sensitive files
+.env
+.env.*
+application-local.properties

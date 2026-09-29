@@ -1,0 +1,151 @@
+pipeline {
+    agent any
+
+    environment {
+        // Jenkins Credentials ID for Docker Hub (Configured in Jenkins as "Username with password")
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        
+        // Docker Hub Account & Repository Name
+        DOCKER_HUB_USER       = 'dhineshmanikandan2006'
+        DOCKER_IMAGE_NAME     = 'campusone-backend'
+
+        // Directory detection: supports both flat and nested repository checkouts
+        PROJECT_DIR = '.'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '=== Stage 1: Checkout Source Code ==='
+                checkout scm
+                script {
+                    if (fileExists('campusone/campusone/pom.xml')) {
+                        env.PROJECT_DIR = 'campusone/campusone'
+                    } else {
+                        env.PROJECT_DIR = '.'
+                    }
+                    echo "Identified project directory: ${env.PROJECT_DIR}"
+                }
+            }
+        }
+
+        stage('Maven Clean') {
+            steps {
+                dir("${env.PROJECT_DIR}") {
+                    echo '=== Stage 2: Maven Clean ==='
+                    script {
+                        if (isUnix()) {
+                            sh 'mvn clean'
+                        } else {
+                            bat 'mvn clean'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir("${env.PROJECT_DIR}") {
+                    echo '=== Stage 3: Run Tests ==='
+                    script {
+                        if (isUnix()) {
+                            sh 'mvn test'
+                        } else {
+                            bat 'mvn test'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Maven Package') {
+            steps {
+                dir("${env.PROJECT_DIR}") {
+                    echo '=== Stage 4: Maven Package ==='
+                    script {
+                        // Automated tests were already verified in Stage 3; package executable JAR
+                        if (isUnix()) {
+                            sh 'mvn package -DskipTests'
+                        } else {
+                            bat 'mvn package -DskipTests'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir("${env.PROJECT_DIR}") {
+                    echo '=== Stage 5: Docker Build ==='
+                    script {
+                        if (isUnix()) {
+                            sh """
+                                docker build \
+                                  -t ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:${BUILD_NUMBER} \
+                                  -t ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:latest .
+                            """
+                        } else {
+                            bat """
+                                docker build ^
+                                  -t %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:%BUILD_NUMBER% ^
+                                  -t %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:latest .
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                echo '=== Stage 6: Docker Login ==='
+                withCredentials([usernamePassword(
+                    credentialsId: "${env.DOCKER_CREDENTIALS_ID}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    script {
+                        if (isUnix()) {
+                            sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                        } else {
+                            bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                echo '=== Stage 7: Docker Push ==='
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker push ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}
+                            docker push ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:latest
+                        """
+                    } else {
+                        bat """
+                            docker push %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:%BUILD_NUMBER%
+                            docker push %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:latest
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Jenkins pipeline execution completed.'
+        }
+        success {
+            echo 'SUCCESS: All Maven phases and Docker image push to Docker Hub succeeded.'
+        }
+        failure {
+            echo 'FAILURE: The pipeline failed. Inspect the console output above.'
+        }
+    }
+}

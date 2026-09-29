@@ -2,11 +2,14 @@ package com.campusone.campusone.config;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 
 import com.campusone.campusone.dto.response.ApiErrorResponse;
 import com.campusone.campusone.security.JwtAuthenticationFilter;
 import com.campusone.campusone.security.CustomUserDetailsService;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,10 +26,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+	@Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+	private String allowedOrigins;
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final CustomUserDetailsService customUserDetailsService;
@@ -35,6 +44,24 @@ public class SecurityConfig {
 			CustomUserDetailsService customUserDetailsService) {
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 		this.customUserDetailsService = customUserDetailsService;
+	}
+
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		List<String> origins = Arrays.stream(allowedOrigins.split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.toList();
+		configuration.setAllowedOriginPatterns(origins);
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+		configuration.setAllowedHeaders(List.of("*"));
+		configuration.setAllowCredentials(true);
+		configuration.setMaxAge(3600L);
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
 	}
 
 	@Bean
