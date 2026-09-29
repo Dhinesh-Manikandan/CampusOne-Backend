@@ -2,150 +2,244 @@ pipeline {
     agent any
 
     environment {
-        // Jenkins Credentials ID for Docker Hub (Configured in Jenkins as "Username with password")
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
-        
-        // Docker Hub Account & Repository Name
-        DOCKER_HUB_USER       = 'dhineshmanikandan2006'
-        DOCKER_IMAGE_NAME     = 'campusone-backend'
+        // =========================================================
+        // Docker configuration
+        // =========================================================
+        DOCKER_EXE = 'C:\\Users\\Dell\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
 
-        // Directory detection: supports both flat and nested repository checkouts
+        DOCKER_HUB_USER = 'dhineshmanikandan2006'
+        DOCKER_IMAGE_NAME = 'dhineshmanikandan2006/campusone-backend'
+
+        // Jenkins Secret Text credential containing Docker Hub PAT
+        DOCKER_PAT_CREDENTIALS_ID = 'docker-hub-pat'
+
+        // Default project directory
         PROJECT_DIR = '.'
+
+        // Docker image tag
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
+
+        // =========================================================
+        // 1. CHECKOUT
+        // =========================================================
         stage('Checkout') {
             steps {
-                echo '=== Stage 1: Checkout Source Code ==='
+                echo '=============================================='
+                echo 'Stage 1: Checkout Source Code'
+                echo '=============================================='
+
                 checkout scm
+
                 script {
                     if (fileExists('campusone/campusone/pom.xml')) {
                         env.PROJECT_DIR = 'campusone/campusone'
                     } else {
                         env.PROJECT_DIR = '.'
                     }
+
                     echo "Identified project directory: ${env.PROJECT_DIR}"
                 }
             }
         }
 
+        // =========================================================
+        // 2. MAVEN CLEAN
+        // =========================================================
         stage('Maven Clean') {
             steps {
+                echo '=============================================='
+                echo 'Stage 2: Maven Clean'
+                echo '=============================================='
+
                 dir("${env.PROJECT_DIR}") {
-                    echo '=== Stage 2: Maven Clean ==='
-                    script {
-                        if (isUnix()) {
-                            sh 'mvn clean'
-                        } else {
-                            bat 'mvn clean'
-                        }
-                    }
+                    bat 'mvn clean'
                 }
+
+                echo 'Maven clean completed successfully.'
             }
         }
 
+        // =========================================================
+        // 3. RUN TESTS
+        // =========================================================
         stage('Run Tests') {
             steps {
+                echo '=============================================='
+                echo 'Stage 3: Run Tests'
+                echo '=============================================='
+
                 dir("${env.PROJECT_DIR}") {
-                    echo '=== Stage 3: Run Tests ==='
-                    script {
-                        if (isUnix()) {
-                            sh 'mvn test'
-                        } else {
-                            bat 'mvn test'
-                        }
-                    }
+                    bat 'mvn test'
                 }
+
+                echo 'Maven tests completed successfully.'
             }
         }
 
+        // =========================================================
+        // 4. MAVEN PACKAGE
+        // =========================================================
         stage('Maven Package') {
             steps {
+                echo '=============================================='
+                echo 'Stage 4: Maven Package'
+                echo '=============================================='
+
                 dir("${env.PROJECT_DIR}") {
-                    echo '=== Stage 4: Maven Package ==='
-                    script {
-                        // Automated tests were already verified in Stage 3; package executable JAR
-                        if (isUnix()) {
-                            sh 'mvn package -DskipTests'
-                        } else {
-                            bat 'mvn package -DskipTests'
-                        }
-                    }
+                    bat 'mvn package -DskipTests'
                 }
+
+                echo 'Maven package completed successfully.'
             }
         }
 
+        // =========================================================
+        // 5. VERIFY DOCKER
+        // =========================================================
+        stage('Verify Docker') {
+            steps {
+                echo '=============================================='
+                echo 'Stage 5: Verify Docker'
+                echo '=============================================='
+
+                bat '"%DOCKER_EXE%" --version'
+
+                echo 'Docker is accessible from Jenkins.'
+            }
+        }
+
+        // =========================================================
+        // 6. BUILD DOCKER IMAGE
+        // =========================================================
         stage('Docker Build') {
             steps {
+                echo '=============================================='
+                echo 'Stage 6: Docker Build'
+                echo '=============================================='
+
                 dir("${env.PROJECT_DIR}") {
-                    echo '=== Stage 5: Docker Build ==='
-                    script {
-                        if (isUnix()) {
-                            sh """
-                                docker build \
-                                  -t ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:${BUILD_NUMBER} \
-                                  -t ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:latest .
-                            """
-                        } else {
-                            bat """
-                                docker build ^
-                                  -t %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:%BUILD_NUMBER% ^
-                                  -t %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:latest .
-                            """
-                        }
-                    }
+                    bat """
+                        "%DOCKER_EXE%" build ^
+                          -t %DOCKER_IMAGE_NAME%:%IMAGE_TAG% ^
+                          -t %DOCKER_IMAGE_NAME%:latest .
+                    """
                 }
+
+                echo 'Docker image built successfully.'
+                echo "Image: %DOCKER_IMAGE_NAME%:%IMAGE_TAG%"
+                echo "Image: %DOCKER_IMAGE_NAME%:latest"
             }
         }
 
-        stage('Docker Login') {
+        // =========================================================
+        // 7. DOCKER HUB LOGIN
+        // =========================================================
+        stage('Docker Hub Login') {
             steps {
-                echo '=== Stage 6: Docker Login ==='
-                withCredentials([usernamePassword(
-                    credentialsId: "${env.DOCKER_CREDENTIALS_ID}",
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    script {
-                        if (isUnix()) {
-                            sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                        } else {
-                            bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                echo '=============================================='
+                echo 'Stage 7: Login to Docker Hub'
+                echo '=============================================='
+
+                withCredentials([
+                    string(
+                        credentialsId: "${DOCKER_PAT_CREDENTIALS_ID}",
+                        variable: 'DOCKER_PAT'
+                    )
+                ]) {
+                    powershell '''
+                        $DOCKER_PAT | & $env:DOCKER_EXE login `
+                            --username $env:DOCKER_HUB_USER `
+                            --password-stdin
+
+                        if ($LASTEXITCODE -ne 0) {
+                            exit $LASTEXITCODE
                         }
-                    }
+                    '''
                 }
+
+                echo 'Docker Hub login successful.'
             }
         }
 
+        // =========================================================
+        // 8. DOCKER PUSH
+        // =========================================================
         stage('Docker Push') {
             steps {
-                echo '=== Stage 7: Docker Push ==='
-                script {
-                    if (isUnix()) {
-                        sh """
-                            docker push ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}
-                            docker push ${env.DOCKER_HUB_USER}/${env.DOCKER_IMAGE_NAME}:latest
-                        """
-                    } else {
-                        bat """
-                            docker push %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:%BUILD_NUMBER%
-                            docker push %DOCKER_HUB_USER%/%DOCKER_IMAGE_NAME%:latest
-                        """
-                    }
-                }
+                echo '=============================================='
+                echo 'Stage 8: Push Docker Image'
+                echo '=============================================='
+
+                bat """
+                    "%DOCKER_EXE%" push %DOCKER_IMAGE_NAME%:%IMAGE_TAG%
+                    "%DOCKER_EXE%" push %DOCKER_IMAGE_NAME%:latest
+                """
+
+                echo 'Docker images pushed successfully.'
+                echo "Pushed: %DOCKER_IMAGE_NAME%:%IMAGE_TAG%"
+                echo "Pushed: %DOCKER_IMAGE_NAME%:latest"
+            }
+        }
+
+        // =========================================================
+        // 9. VERIFY DOCKER IMAGE
+        // =========================================================
+        stage('Verify Docker Image') {
+            steps {
+                echo '=============================================='
+                echo 'Stage 9: Verify Docker Image'
+                echo '=============================================='
+
+                bat '"%DOCKER_EXE%" images %DOCKER_IMAGE_NAME%'
+
+                echo 'Docker image verification completed.'
             }
         }
     }
 
+    // =============================================================
+    // POST BUILD ACTIONS
+    // =============================================================
     post {
+
+        success {
+            echo '''
+            ==============================================
+            CAMPUSONE BACKEND PIPELINE SUCCESS
+            ==============================================
+            Build completed successfully.
+
+            Docker image:
+            dhineshmanikandan2006/campusone-backend
+
+            Tags:
+            - Jenkins Build Number
+            - latest
+
+            The image has been pushed to Docker Hub.
+            ==============================================
+            '''
+        }
+
+        failure {
+            echo '''
+            ==============================================
+            CAMPUSONE BACKEND PIPELINE FAILED
+            ==============================================
+            Please check the Jenkins console output
+            for the failed stage.
+            ==============================================
+            '''
+        }
+
         always {
             echo 'Jenkins pipeline execution completed.'
-        }
-        success {
-            echo 'SUCCESS: All Maven phases and Docker image push to Docker Hub succeeded.'
-        }
-        failure {
-            echo 'FAILURE: The pipeline failed. Inspect the console output above.'
+
+            // Logout from Docker Hub
+            bat '"%DOCKER_EXE%" logout || exit 0'
         }
     }
 }
