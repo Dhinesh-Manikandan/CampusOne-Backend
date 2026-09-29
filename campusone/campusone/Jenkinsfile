@@ -1,54 +1,49 @@
 pipeline {
+
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     environment {
-        // =========================================================
-        // Docker configuration
-        // =========================================================
         DOCKER_EXE = 'C:\\Users\\Dell\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
 
         DOCKER_HUB_USER = 'dhineshmanikandan2006'
         DOCKER_IMAGE_NAME = 'dhineshmanikandan2006/campusone-backend'
 
-        // Jenkins Secret Text credential containing Docker Hub PAT
         DOCKER_PAT_CREDENTIALS_ID = 'docker-hub-pat'
 
-        // Default project directory
-        PROJECT_DIR = '.'
+        PROJECT_DIR = 'campusone/campusone'
 
-        // Docker image tag
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-stage('Checkout') {
-    steps {
-        echo '=============================================='
-        echo 'Stage 1: Checkout Source Code'
-        echo '=============================================='
 
-        checkout scm
+        stage('Checkout') {
+            steps {
+                echo '=============================================='
+                echo 'Stage 1: Checkout Source Code'
+                echo '=============================================='
 
-        script {
-            if (fileExists('pom.xml')) {
-                env.PROJECT_DIR = '.'
-            } else if (fileExists('campusone/campusone/pom.xml')) {
-                env.PROJECT_DIR = 'campusone/campusone'
-            } else if (fileExists('campusone/pom.xml')) {
-                env.PROJECT_DIR = 'campusone'
-            } else {
-                error 'ERROR: pom.xml was not found in the expected project directories.'
+                checkout scm
+
+                bat '''
+                    echo ===== BACKEND PROJECT =====
+                    dir campusone\\campusone
+                '''
+
+                script {
+                    if (!fileExists('campusone/campusone/pom.xml')) {
+                        error 'ERROR: pom.xml not found in campusone/campusone'
+                    }
+
+                    echo 'Maven project found at: campusone/campusone'
+                }
             }
-
-            echo "Identified project directory: ${env.PROJECT_DIR}"
-            echo "pom.xml found successfully."
         }
-    }
-}
 
-        // =========================================================
-        // 2. MAVEN CLEAN
-        // =========================================================
         stage('Maven Clean') {
             steps {
                 echo '=============================================='
@@ -58,14 +53,9 @@ stage('Checkout') {
                 dir("${env.PROJECT_DIR}") {
                     bat 'mvn clean'
                 }
-
-                echo 'Maven clean completed successfully.'
             }
         }
 
-        // =========================================================
-        // 3. RUN TESTS
-        // =========================================================
         stage('Run Tests') {
             steps {
                 echo '=============================================='
@@ -75,14 +65,9 @@ stage('Checkout') {
                 dir("${env.PROJECT_DIR}") {
                     bat 'mvn test'
                 }
-
-                echo 'Maven tests completed successfully.'
             }
         }
 
-        // =========================================================
-        // 4. MAVEN PACKAGE
-        // =========================================================
         stage('Maven Package') {
             steps {
                 echo '=============================================='
@@ -92,14 +77,9 @@ stage('Checkout') {
                 dir("${env.PROJECT_DIR}") {
                     bat 'mvn package -DskipTests'
                 }
-
-                echo 'Maven package completed successfully.'
             }
         }
 
-        // =========================================================
-        // 5. VERIFY DOCKER
-        // =========================================================
         stage('Verify Docker') {
             steps {
                 echo '=============================================='
@@ -107,14 +87,9 @@ stage('Checkout') {
                 echo '=============================================='
 
                 bat '"%DOCKER_EXE%" --version'
-
-                echo 'Docker is accessible from Jenkins.'
             }
         }
 
-        // =========================================================
-        // 6. BUILD DOCKER IMAGE
-        // =========================================================
         stage('Docker Build') {
             steps {
                 echo '=============================================='
@@ -124,24 +99,17 @@ stage('Checkout') {
                 dir("${env.PROJECT_DIR}") {
                     bat """
                         "%DOCKER_EXE%" build ^
-                          -t %DOCKER_IMAGE_NAME%:%IMAGE_TAG% ^
-                          -t %DOCKER_IMAGE_NAME%:latest .
+                        -t %DOCKER_IMAGE_NAME%:%IMAGE_TAG% ^
+                        -t %DOCKER_IMAGE_NAME%:latest .
                     """
                 }
-
-                echo 'Docker image built successfully.'
-                echo "Image: %DOCKER_IMAGE_NAME%:%IMAGE_TAG%"
-                echo "Image: %DOCKER_IMAGE_NAME%:latest"
             }
         }
 
-        // =========================================================
-        // 7. DOCKER HUB LOGIN
-        // =========================================================
         stage('Docker Hub Login') {
             steps {
                 echo '=============================================='
-                echo 'Stage 7: Login to Docker Hub'
+                echo 'Stage 7: Docker Hub Login'
                 echo '=============================================='
 
                 withCredentials([
@@ -150,6 +118,7 @@ stage('Checkout') {
                         variable: 'DOCKER_PAT'
                     )
                 ]) {
+
                     powershell '''
                         $DOCKER_PAT | & $env:DOCKER_EXE login `
                             --username $env:DOCKER_HUB_USER `
@@ -160,67 +129,51 @@ stage('Checkout') {
                         }
                     '''
                 }
-
-                echo 'Docker Hub login successful.'
             }
         }
 
-        // =========================================================
-        // 8. DOCKER PUSH
-        // =========================================================
         stage('Docker Push') {
             steps {
                 echo '=============================================='
-                echo 'Stage 8: Push Docker Image'
+                echo 'Stage 8: Docker Push'
                 echo '=============================================='
 
                 bat """
                     "%DOCKER_EXE%" push %DOCKER_IMAGE_NAME%:%IMAGE_TAG%
                     "%DOCKER_EXE%" push %DOCKER_IMAGE_NAME%:latest
                 """
-
-                echo 'Docker images pushed successfully.'
-                echo "Pushed: %DOCKER_IMAGE_NAME%:%IMAGE_TAG%"
-                echo "Pushed: %DOCKER_IMAGE_NAME%:latest"
             }
         }
 
-        // =========================================================
-        // 9. VERIFY DOCKER IMAGE
-        // =========================================================
         stage('Verify Docker Image') {
             steps {
                 echo '=============================================='
                 echo 'Stage 9: Verify Docker Image'
                 echo '=============================================='
 
-                bat '"%DOCKER_EXE%" images %DOCKER_IMAGE_NAME%'
-
-                echo 'Docker image verification completed.'
+                bat """
+                    "%DOCKER_EXE%" images %DOCKER_IMAGE_NAME%
+                """
             }
         }
     }
 
-    // =============================================================
-    // POST BUILD ACTIONS
-    // =============================================================
     post {
+
+        always {
+            echo 'Jenkins pipeline execution completed.'
+
+            bat '''
+                "%DOCKER_EXE%" logout || exit 0
+            '''
+        }
 
         success {
             echo '''
             ==============================================
             CAMPUSONE BACKEND PIPELINE SUCCESS
             ==============================================
-            Build completed successfully.
-
-            Docker image:
-            dhineshmanikandan2006/campusone-backend
-
-            Tags:
-            - Jenkins Build Number
-            - latest
-
-            The image has been pushed to Docker Hub.
+            Docker image successfully built and pushed.
             ==============================================
             '''
         }
@@ -234,13 +187,6 @@ stage('Checkout') {
             for the failed stage.
             ==============================================
             '''
-        }
-
-        always {
-            echo 'Jenkins pipeline execution completed.'
-
-            // Logout from Docker Hub
-            bat '"%DOCKER_EXE%" logout || exit 0'
         }
     }
 }
