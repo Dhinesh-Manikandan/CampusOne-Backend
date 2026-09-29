@@ -21,29 +21,30 @@ pipeline {
     }
 
     stages {
+stage('Checkout') {
+    steps {
+        echo '=============================================='
+        echo 'Stage 1: Checkout Source Code'
+        echo '=============================================='
 
-        // =========================================================
-        // 1. CHECKOUT
-        // =========================================================
-        stage('Checkout') {
-            steps {
-                echo '=============================================='
-                echo 'Stage 1: Checkout Source Code'
-                echo '=============================================='
+        checkout scm
 
-                checkout scm
-
-                script {
-                    if (fileExists('campusone/campusone/pom.xml')) {
-                        env.PROJECT_DIR = 'campusone/campusone'
-                    } else {
-                        env.PROJECT_DIR = '.'
-                    }
-
-                    echo "Identified project directory: ${env.PROJECT_DIR}"
-                }
+        script {
+            if (fileExists('pom.xml')) {
+                env.PROJECT_DIR = '.'
+            } else if (fileExists('campusone/campusone/pom.xml')) {
+                env.PROJECT_DIR = 'campusone/campusone'
+            } else if (fileExists('campusone/pom.xml')) {
+                env.PROJECT_DIR = 'campusone'
+            } else {
+                error 'ERROR: pom.xml was not found in the expected project directories.'
             }
+
+            echo "Identified project directory: ${env.PROJECT_DIR}"
+            echo "pom.xml found successfully."
         }
+    }
+}
 
         // =========================================================
         // 2. MAVEN CLEAN
