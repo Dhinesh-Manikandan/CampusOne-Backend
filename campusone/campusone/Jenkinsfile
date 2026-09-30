@@ -12,8 +12,6 @@ pipeline {
         DOCKER_HUB_USER = 'dhineshmanikandan2006'
         DOCKER_IMAGE_NAME = 'dhineshmanikandan2006/campusone-backend'
 
-        DOCKER_PAT_CREDENTIALS_ID = 'docker-hub-pat'
-
         PROJECT_DIR = 'campusone/campusone'
 
         IMAGE_TAG = "${BUILD_NUMBER}"
@@ -106,53 +104,45 @@ pipeline {
             }
         }
 
-        stage('Docker Hub Login') {
-            steps {
-                echo '=============================================='
-                echo 'Stage 7: Docker Hub Login'
-                echo '=============================================='
-
-                withCredentials([
-                    string(
-                        credentialsId: "${DOCKER_PAT_CREDENTIALS_ID}",
-                        variable: 'DOCKER_PAT'
-                    )
-                ]) {
-
-                    powershell '''
-                        $DOCKER_PAT | & $env:DOCKER_EXE login `
-                            --username $env:DOCKER_HUB_USER `
-                            --password-stdin
-
-                        if ($LASTEXITCODE -ne 0) {
-                            exit $LASTEXITCODE
-                        }
-                    '''
-                }
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                echo '=============================================='
-                echo 'Stage 8: Docker Push'
-                echo '=============================================='
-
-                bat """
-                    "%DOCKER_EXE%" push %DOCKER_IMAGE_NAME%:%IMAGE_TAG%
-                    "%DOCKER_EXE%" push %DOCKER_IMAGE_NAME%:latest
-                """
-            }
-        }
-
         stage('Verify Docker Image') {
             steps {
                 echo '=============================================='
-                echo 'Stage 9: Verify Docker Image'
+                echo 'Stage 7: Verify Docker Image'
                 echo '=============================================='
 
                 bat """
                     "%DOCKER_EXE%" images %DOCKER_IMAGE_NAME%
+                """
+            }
+        }
+
+        stage('Docker Push Instructions') {
+            steps {
+                echo '=============================================='
+                echo 'Stage 8: Docker Hub Push Instructions'
+                echo '=============================================='
+
+                echo """
+                ==============================================
+                DOCKER IMAGE BUILT SUCCESSFULLY
+                ==============================================
+
+                Backend Image:
+                ${DOCKER_IMAGE_NAME}:${IMAGE_TAG}
+
+                Latest Image:
+                ${DOCKER_IMAGE_NAME}:latest
+
+                Run the following commands in your normal
+                Windows terminal to push the images:
+
+                docker login -u ${DOCKER_HUB_USER}
+
+                docker push ${DOCKER_IMAGE_NAME}:${IMAGE_TAG}
+
+                docker push ${DOCKER_IMAGE_NAME}:latest
+
+                ==============================================
                 """
             }
         }
@@ -162,10 +152,6 @@ pipeline {
 
         always {
             echo 'Jenkins pipeline execution completed.'
-
-            bat '''
-                "%DOCKER_EXE%" logout || exit 0
-            '''
         }
 
         success {
@@ -173,7 +159,11 @@ pipeline {
             ==============================================
             CAMPUSONE BACKEND PIPELINE SUCCESS
             ==============================================
-            Docker image successfully built and pushed.
+            Maven build, tests and Docker image build
+            completed successfully.
+
+            Docker Hub push must be performed manually
+            from the normal terminal.
             ==============================================
             '''
         }
